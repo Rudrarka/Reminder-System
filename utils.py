@@ -12,14 +12,17 @@ def diff_days(dt):
 """
 def update_trigger_date(session, delta_days, invoice_id):
     message = ''
+
+    #check if reminder exists for the invoice
     if session.query(app.Reminder).filter(app.Reminder.id == invoice_id).count() > 0:
         reminder = app.Reminder.query.filter_by(id = invoice_id ).first()
         trigger_date = reminder.trigger_date
         updated_trigger_date = trigger_date + timedelta(days=delta_days)
+        
+        # update trigger date
         reminder.trigger_date = updated_trigger_date
         session.add(reminder)
         diff = diff_days(updated_trigger_date)
-            # date_diff = updated_trigger_date - date_today
         if diff < 0:
             message = 'Updated trigger date of the reminder is in the past.'
         else:
@@ -32,6 +35,8 @@ def update_trigger_date(session, delta_days, invoice_id):
 """
 def update_invoice_due_date(session, invoice_id, updated_due_date):
     status = True
+
+    # check if invoice exists
     if session.query(app.Invoice).filter(app.Invoice.id == int(invoice_id)).count() == 0:
         status = False
         message = 'No invoice with the given id is present'
@@ -41,10 +46,14 @@ def update_invoice_due_date(session, invoice_id, updated_due_date):
     delta = updated_due_date - due_date
     delta_days = delta.days
     print(delta_days)
+
+    # no change if current due date and request date are same.
     if delta_days == 0:
         status = False
         message = 'Current due date is same as the requested due date.'
         return status, message
+    
+    #update due date of the invoice
     invoice.due_date = updated_due_date
     session.add(invoice)
     message = update_trigger_date(session, delta_days, invoice.id)

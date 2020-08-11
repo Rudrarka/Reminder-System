@@ -38,12 +38,14 @@ Input params : String invoice_id and String due_date_str.
 """
 @app.route('/api/invoice/update-due-date', methods=['PATCH'])
 def update_due_date():
+    # get request values
     data = request.get_json(force=True)
     invoice_id = data['invoice_id']
     due_date_str = data['due_date_str']
     updated_due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date()
     diff = utils.diff_days(updated_due_date)
 
+    # check if date to update is in the past
     if diff < 0:
         message = {
             'message' : 'Requested due date has already passed. Please select a relevant date. '
@@ -51,27 +53,33 @@ def update_due_date():
         return json.dumps(message)
 
     try:
+        
         status, message = utils.update_invoice_due_date(db.session, invoice_id, updated_due_date)
         if not status:
-            message = {
+            response_message = {
                 'message' : message
             }
-            return json.dumps(message)
+            return json.dumps(response_message)
+        
+        #commit the transaction
         db.session.commit()
         app.logger.info('Committed successfully.')
-        message = {
+        response_message = {
             'message' : 'Updated due date of the invoice.' + message
         }
-        return json.dumps(message)
+        return json.dumps(response_message)
     except Exception as e:
+
+        #rollback in case of exception.
         db.session.rollback()
-        print (e)
         app.logger.error(str(e))
         message = {
             'message' : 'Update failed due to some issue. Plese try again later.'
         }
         return json.dumps(message)
     finally:
+
+        #close the session
         db.session.close()
         app.logger.info('Session closed.')
  
