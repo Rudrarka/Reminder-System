@@ -24,7 +24,6 @@ def update_trigger_date(session, delta_days, invoice_id):
             message = 'Updated trigger date of the reminder is in the past.'
         else:
             message = 'Updated trigger date of the reminder.'
-        print(updated_trigger_date)
     else:
         message = 'Reminder is not present for the invoice.'
     return message

@@ -43,10 +43,12 @@ def update_due_date():
     due_date_str = data['due_date_str']
     updated_due_date = datetime.strptime(due_date_str, '%Y-%m-%d').date()
     diff = utils.diff_days(updated_due_date)
-    past_message = ''
-    
+
     if diff < 0:
-        past_message = 'Updated due date is in the past.'
+        message = {
+            'message' : 'Requested due date has already passed. Please select a relevant date. '
+        }
+        return json.dumps(message)
 
     try:
         status, message = utils.update_invoice_due_date(db.session, invoice_id, updated_due_date)
@@ -56,21 +58,22 @@ def update_due_date():
             }
             return json.dumps(message)
         db.session.commit()
-        print('commited')
+        app.logger.info('Committed successfully.')
         message = {
-            'message' : 'Updated due date of the invoice.' + past_message + message
+            'message' : 'Updated due date of the invoice.' + message
         }
         return json.dumps(message)
     except Exception as e:
         db.session.rollback()
         print (e)
+        app.logger.error(str(e))
         message = {
-            'message' : str(e)
+            'message' : 'Update failed due to some issue. Plese try again later.'
         }
         return json.dumps(message)
     finally:
         db.session.close()
-        print('session closed')
+        app.logger.info('Session closed.')
  
     
         
